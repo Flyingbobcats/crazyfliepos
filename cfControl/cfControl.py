@@ -54,8 +54,8 @@ def waypoints(wpt):
         z = 0
         yaw = 0
     elif wpt > 1 and wpt < 5:
-        x = 1
-        y = 1
+        x = 0
+        y = 0
         z = 1
         yaw = 0
 
@@ -152,14 +152,14 @@ detected = True
 TimeStart = time.time()
 
 print("Connecting to vicon stream. . .")
-cf_vicon = viconStream('CF_1')
+cf_vicon = viconStream('CF_3')
 time.sleep(2)
 print("Starting to send control messages . . .")
 
 
 
 while detected == True:
-    time.sleep(0.0001)
+    time.sleep(0.01)
     try:
         try:
             x = cf_vicon.X["x"]

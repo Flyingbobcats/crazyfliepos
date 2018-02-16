@@ -13,7 +13,7 @@ class viconStream():
         self.X["yaw"] = []
         self.X["yawRate"] = []
 
-        self.update_rate = 0.005
+        self.update_rate = 0.01
 
 
         thread = threading.Thread(target=self.run, args=())
@@ -30,10 +30,9 @@ class viconStream():
         time.sleep(1)
         print("starting to send position command!")
 
-        self.lock.acquire()
+
         X = vc.getPos(self.name)
         yaw_previous = X["yaw"]
-        self.lock.release()
 
         while True:
             # self.lock.acquire()
