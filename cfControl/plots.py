@@ -68,6 +68,8 @@ class responsePlots():
         self.x    = pkt["x"]
         self.y    = pkt["y"]
         self.z    = pkt["z"]
+        self.u    = pkt["u"]
+        self.v    = pkt["v"]
         self.yaw  = pkt["yaw"]
         self.x_sp = pkt["x_sp"]
         self.y_sp = pkt["y_sp"]
@@ -116,7 +118,7 @@ class responsePlots():
     def run(self):
         time.sleep(1)
         self.fig = plt.figure(figsize=plt.figaspect(.5))
-        self.fig = plt.figure(figsize=(15,7.5))
+        self.fig = plt.figure(figsize=(10,5))
         self.grid = plt.GridSpec(4,6,wspace=0.1,hspace=0.1)
 
         self.ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=2)
@@ -168,6 +170,8 @@ class responsePlots():
                 self.ax5.cla()
                 self.ax5.plot(self.x, self.y, 'bo')
                 self.ax5.plot(self.x_sp, self.y_sp, 'r*')
+                self.ax5.plot(.5*np.cos(np.linspace(0,np.pi*2)),.5*np.sin(np.linspace(0,np.pi*2)))
+                self.ax5.quiver(self.x,self.y,self.u,self.v)
                 self.ax5.grid(True)
                 self.ax5.set_xlim(-3,3)
                 self.ax5.set_ylim(-3,3)

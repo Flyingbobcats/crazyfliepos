@@ -49,7 +49,7 @@ cmd = {
 
 
 def waypoints(wpt,vf_x, vf_y):
-
+    print(wpt)
     if wpt < 1:
        x = 0
        y = 0
@@ -66,8 +66,8 @@ def waypoints(wpt,vf_x, vf_y):
 
     elif wpt > 2 and wpt <= 15 :
         # print("Vector field")
-        x = vf_x
-        y = vf_y
+        x = np.cos(ts-time.time())
+        y = np.sin(ts-time.time())
         z = 0.5
         yaw = 0
 
@@ -131,8 +131,8 @@ plot_conn.connect("tcp://127.0.0.1:1515")
 
 
 
-r_pid = PID_RP(name="roll", P=29, I=2.5, D=17, Integrator_max=15, Integrator_min=-15, set_point=0, zmq_connection=pid_viz_conn)
-p_pid = PID_RP(name="pitch", P=29, I=2.5, D=17, Integrator_max=15, Integrator_min=-15, set_point=0, zmq_connection=pid_viz_conn)
+r_pid = PID_RP(name="roll", P=29, I=5, D=50, Integrator_max=30, Integrator_min=-30, set_point=0, zmq_connection=pid_viz_conn)
+p_pid = PID_RP(name="pitch", P=29, I=5, D=50, Integrator_max=30, Integrator_min=-30, set_point=0, zmq_connection=pid_viz_conn)
 y_pid = PID_RP(name="yaw", P=80, I=20, D=15, Integrator_max=10, Integrator_min=-5, set_point=0, zmq_connection=pid_viz_conn)
 t_pid = PID_RP(name="thrust", P=55, I=120, D=45, set_point=0.5, Integrator_max=120, Integrator_min=-0.01/0.035, zmq_connection=pid_viz_conn)
 
@@ -179,7 +179,7 @@ cf_vicon = viconStream('CF_1')
 obstacle_vicon = viconStream('CF_obstacle')
 time.sleep(2)
 print("Starting to send control messages . . .")
-
+ts = time.time()
 
 
 while detected == True:
@@ -223,7 +223,6 @@ while detected == True:
 
             # Lead rover with heading command
             d = .25 * (-(np.tanh(2*np.pi*(cf_vicon.X["speed"]/8) - np.pi) + 1) + 2)
-            print(d)
             headingCmd = np.arctan2(v, u)
             xCmd = d * np.cos(headingCmd) + x
             yCmd = d * np.sin(headingCmd) + y

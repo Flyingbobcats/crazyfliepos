@@ -1,6 +1,7 @@
 import threading
 import time
 import viconClient
+import numpy as np
 
 
 class viconStream():
@@ -33,9 +34,13 @@ class viconStream():
 
         X = vc.getPos(self.name)
         yaw_previous = X["yaw"]
+        x_prev = X["x"]
+        y_prev = X["y"]
 
         while True:
             # self.lock.acquire()
+            x_prev = X["x"]
+            y_prev = X["y"]
             yaw_previous = X["yaw"]
             X = vc.getPos(self.name)
             self.X["x"] = X["x"]
@@ -43,6 +48,9 @@ class viconStream():
             self.X["z"] = X["z"]
             self.X["yaw"] = X["yaw"]
             self.X["yawRate"] = (X["yaw"]-yaw_previous) / self.update_rate
+            self.X["vx"] = (X["x"]-x_prev) / self.update_rate
+            self.X["vy"] = (X["y"]-y_prev) / self.update_rate
+            self.X["speed"] = np.sqrt(np.square(self.X["vx"])+np.square(self.X["vy"]))
             # self.lock.release()
 
             time.sleep(self.update_rate)

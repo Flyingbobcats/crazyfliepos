@@ -16,10 +16,10 @@ plot = responsePlots()
 
 while True:
 
-   print('trying for data')
+   # print('trying for data')
    try:
        pkt = plot_conn.recv_json()
-       print(pkt)
+       # print(pkt)
 
        # pkt = {
        #     "x": x,
