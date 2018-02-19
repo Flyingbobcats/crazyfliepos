@@ -1,0 +1,1 @@
+Time:	2.228	Roll Set Point:	-2.129	Pitch Set Point:	0.739	Yaw Set Point:	0.735	X_WP:	0.000	Y_WP:	0.000	Y_WP:	0.500	X:	0.922	Y:	-0.779	Z:	0.040	yaw:	-42.113	yaw rate:	-4.696	Roll:	30.000	Pitch:	1.167	Yaw:	-58.801	Thrust:	25.294

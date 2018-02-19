@@ -58,7 +58,7 @@ def waypoints(wpt,vf_x, vf_y):
 
     elif wpt >= 1 and wpt<=2:
         # print("hover")
-        x = 0.1
+        x = 0
         y = 0
         z = 0.5
         yaw = 0
@@ -94,8 +94,8 @@ def waypoints(wpt,vf_x, vf_y):
 
 # Create navigational field
 cvf = VectorField.CircleVectorField('Gradient')
-cvf.G = 2
-cvf.mCircleRadius = 0.5
+cvf.G = 1
+cvf.mCircleRadius = .5
 cvf.xc = 0
 cvf.yc = 0
 cvf.bUsePathFunc = False
@@ -104,7 +104,7 @@ cvf.NormVFVectors = True
 # Create obstacle field
 ovf = VectorField.CircleVectorField('Gradient')
 ovf.mCircleRadius = 0.01
-ovf.G = -1
+ovf.G = -.1
 ovf.H = 5
 ovf.L = 0
 ovf.xc = 0
@@ -181,7 +181,38 @@ time.sleep(2)
 print("Starting to send control messages . . .")
 
 
-
+# vfx = np.linspace(-2,2)
+# vfy = np.linspace(-2,2)
+#
+# vfusend = []
+# vfvsend = []
+#
+# for i in range(0,len(vfx)):
+#     for j in range(0,len(vfy)):
+#         params = VectorField.VFData()
+#         params.x = vfx[i]
+#         params.y = vfy[j]
+#
+#         newCVF = cvf.GetVF_at_XY(params)
+#         cvfu = newCVF.F[0]
+#         cvfv = newCVF.F[1]
+#
+#         vfusend.append(cvfu)
+#         vfvsend.append(cvfv)
+#
+# vfx = np.array(vfx)
+# vfy = np.array(vfy)
+# vfusend = np.asarray(vfusend)
+# vfvsend = np.asarray(vfvsend)
+        # rOVF = np.sqrt(np.square(x - ovf.xc) + np.square(y - ovf.yc))
+        # p = df.VGauss(rOVF)
+        #
+        # newOVF = ovf.GetVF_at_XY(params)
+        # uAvoid = p * newOVF.F[0]
+        # vAvoid = p * newOVF.F[1]
+        #
+        # u = u + uAvoid
+        # v = v + vAvoid
 while detected == True:
     time.sleep(0.01)
     try:
@@ -220,9 +251,8 @@ while detected == True:
             v = v + vAvoid
 
 
-
             # Lead rover with heading command
-            d = .25 * (-(np.tanh(2*np.pi*(cf_vicon.X["speed"]/8) - np.pi) + 1) + 2)
+            d = .03125 * (-(np.tanh(2*np.pi*(cf_vicon.X["speed"]/2) - np.pi) + 1) + 2)
             print(d)
             headingCmd = np.arctan2(v, u)
             xCmd = d * np.cos(headingCmd) + x
@@ -351,6 +381,14 @@ while detected == True:
                     "z": z,
                     "u": u,
                     "v": v,
+                    "obx" : obstacle_vicon.X["x"],
+                    "oby": obstacle_vicon.X["y"],
+                    #
+                    # "vfx":vfx,
+                    # "vfy":vfy,
+                    # "vfusend":vfusend,
+                    # "vfvsend":vfvsend,
+
                     "yaw": yaw,
                     "x_sp": SPx,
                     "y_sp": SPy,
