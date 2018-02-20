@@ -73,10 +73,10 @@ class responsePlots():
         self.obx  = pkt["obx"]
         self.oby  = pkt["oby"]
 
-        # self.vfx = pkt["vfx"]
-        # self.vfy = pkt["vfy"]
-        # self.vfu = pkt["vfusend"]
-        # self.vfv = pkt["vfvsend"]
+        self.vfx = pkt["vfx"]
+        self.vfy = pkt["vfy"]
+        self.vfu = pkt["vfusend"]
+        self.vfv = pkt["vfvsend"]
 
         self.yaw  = pkt["yaw"]
         self.x_sp = pkt["x_sp"]
@@ -178,10 +178,10 @@ class responsePlots():
                 self.ax5.cla()
                 self.ax5.plot(self.x, self.y, 'bo')
                 self.ax5.plot(self.x_sp, self.y_sp, 'r*')
-                self.ax5.plot(.5*np.cos(np.linspace(0,np.pi*2)),.5*np.sin(np.linspace(0,np.pi*2)))
+                self.ax5.plot(np.cos(np.linspace(0,np.pi*2)),np.sin(np.linspace(0,np.pi*2)),linewidth=3.0)
                 self.ax5.plot(self.obx+.1*np.cos(np.linspace(0,np.pi*2)),self.oby+.1*np.sin(np.linspace(0,np.pi*2)))
-                self.ax5.quiver(self.x,self.y,self.u,self.v)
-                self.ax5.quiver(self.vfx,self.vfy,self.vfu,self.vfv)
+                self.ax5.quiver(self.x,self.y,self.u,self.v,color='g')
+                self.ax5.quiver(self.vfx,self.vfy,self.vfu,self.vfv,scale=20)
                 self.ax5.grid(True)
                 self.ax5.set_xlim(-3,3)
                 self.ax5.set_ylim(-3,3)
