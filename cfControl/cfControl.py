@@ -99,7 +99,7 @@ def waypoints(wpt,vf_x, vf_y):
 # Create navigational field
 cvf = VectorField.CircleVectorField('Gradient')
 cvf.G = 1
-cvf.mCircleRadius = 1
+cvf.mCircleRadius = .5
 cvf.xc = 0
 cvf.yc = 0
 cvf.bUsePathFunc = False
@@ -108,7 +108,7 @@ cvf.NormVFVectors = True
 # Create obstacle field
 ovf = VectorField.CircleVectorField('Gradient')
 ovf.mCircleRadius = .0001
-ovf.G = -.1
+ovf.G = -.01
 ovf.H = 2
 ovf.L = 0
 ovf.xc = 0
@@ -179,14 +179,14 @@ detected = True
 TimeStart = time.time()
 
 print("Connecting to vicon stream. . .")
-cf_vicon = viconStream('CF_2')
+cf_vicon = viconStream('CF_3')
 obstacle_vicon = viconStream('MOJO_JR')
 time.sleep(2)
 print("Starting to send control messages . . .")
 
 def calcVF():
-    vfy = np.linspace(-2,2,17)
-    vfx = np.linspace(-2,2,17)
+    vfy = np.linspace(-2,2,43)
+    vfx = np.linspace(-2,2,43)
 
     ovf.xc = obstacle_vicon.X["x"]
     ovf.yc = obstacle_vicon.X["y"]
