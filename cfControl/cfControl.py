@@ -179,70 +179,69 @@ detected = True
 TimeStart = time.time()
 
 print("Connecting to vicon stream. . .")
-cf_vicon = viconStream('CF_1')
-obstacle_vicon = viconStream('CF_obstacle')
+cf_vicon = viconStream('CF_2')
+obstacle_vicon = viconStream('MOJO_JR')
 time.sleep(2)
 print("Starting to send control messages . . .")
 
+def calcVF():
+    vfy = np.linspace(-2,2,17)
+    vfx = np.linspace(-2,2,17)
 
-vfx = np.linspace(-2,2,43)
-vfy = np.linspace(-2,2,43)
+    ovf.xc = obstacle_vicon.X["x"]
+    ovf.yc = obstacle_vicon.X["y"]
 
-ovf.xc = obstacle_vicon.X["x"]
-ovf.yc = obstacle_vicon.X["y"]
+    XS = np.empty([len(vfx),len(vfy)])
+    YS = np.empty([len(vfx),len(vfy)])
+    US = np.empty([len(vfx),len(vfy)])
+    VS = np.empty([len(vfx),len(vfy)])
 
-XS = np.empty([len(vfx),len(vfy)])
-YS = np.empty([len(vfx),len(vfy)])
-US = np.empty([len(vfx),len(vfy)])
-VS = np.empty([len(vfx),len(vfy)])
+    for i in range(0,len(vfx)):
+        for j in range(0,len(vfy)):
+            params = VectorField.VFData()
+            params.x = vfx[i]
+            params.y = vfy[j]
 
-vfusend = []
-vfvsend = []
+            rOVF = np.sqrt(np.square(vfx[i] - ovf.xc) + np.square(vfy[j] - ovf.yc))
+            p = df.ActualTanh(rOVF)
 
-for i in range(0,len(vfx)):
-    for j in range(0,len(vfy)):
-        params = VectorField.VFData()
-        params.x = vfx[i]
-        params.y = vfy[j]
+            newOVF = ovf.GetVF_at_XY(params)
+            uAvoid =  newOVF.F[0]
+            vAvoid =  newOVF.F[1]
 
-        rOVF = np.sqrt(np.square(vfx[i] - ovf.xc) + np.square(vfy[j] - ovf.yc))
-        p = df.ActualTanh(rOVF)
+            magAvoid = np.sqrt(np.square(uAvoid)+np.square(vAvoid))
 
-        newOVF = ovf.GetVF_at_XY(params)
-        uAvoid =  newOVF.F[0]
-        vAvoid =  newOVF.F[1]
+            UAVOID = uAvoid / magAvoid
+            VAVOID = vAvoid / magAvoid
 
-        magAvoid = np.sqrt(np.square(uAvoid)+np.square(vAvoid))
-
-        UAVOID = uAvoid / magAvoid
-        VAVOID = vAvoid / magAvoid
-
-        newCVF = cvf.GetVF_at_XY(params)
-        cvfu = newCVF.F[0]
-        cvfv = newCVF.F[1]
+            newCVF = cvf.GetVF_at_XY(params)
+            cvfu = newCVF.F[0]
+            cvfv = newCVF.F[1]
 
 
-        mag = np.sqrt(np.square(cvfu)+np.square(cvfv))
-        XS[i][j] = vfx[i]
-        YS[i][j] = vfy[j]
-        US[i][j] = cvfu / mag + UAVOID*p
-        VS[i][j] = cvfv / mag + VAVOID*p
+            mag = np.sqrt(np.square(cvfu)+np.square(cvfv))
+            XS[i][j] = vfx[i]
+            YS[i][j] = vfy[j]
+            US[i][j] = cvfu / mag + UAVOID*p
+            VS[i][j] = cvfv / mag + VAVOID*p
 
-        MAG = np.sqrt(np.square(US[i][j])+np.square(VS[i][j]))
-        US[i][j] = US[i][j]/MAG
-        VS[i][j] = VS[i][j]/MAG
+            MAG = np.sqrt(np.square(US[i][j])+np.square(VS[i][j]))
+            US[i][j] = US[i][j]/MAG
+            VS[i][j] = VS[i][j]/MAG
 
 
-        # US[i][j] =  UAVOID*p
-        # VS[i][j] =  VAVOID*p
-        print("Decay: ",p,'\t',"Range: ",rOVF)
+            # US[i][j] =  UAVOID*p
+            # VS[i][j] =  VAVOID*p
+            print("Decay: ",p,'\t',"Range: ",rOVF)
 
 
 
-XS = XS.tolist()
-YS = YS.tolist()
-US = US.tolist()
-VS = VS.tolist()
+    XS = XS.tolist()
+    YS = YS.tolist()
+    US = US.tolist()
+    VS = VS.tolist()
+
+    return XS,YS,US,VS
 
 # plt.quiver(XS,YS,US,VS)
 # plt.show()
@@ -275,8 +274,8 @@ VS = VS.tolist()
 
 
 
-
-
+count = 0
+XS,YS,US,VS = calcVF()
 while detected == True:
     time.sleep(0.01)
     try:
@@ -290,6 +289,9 @@ while detected == True:
             ovf.xc = obstacle_vicon.X["x"]
             ovf.yc = obstacle_vicon.X["y"]
 
+            # if np.mod(count,20) == 0:
+            #     XS,YS,US,VS = calcVF()
+
             angle = yaw
 
             params = VectorField.VFData()
@@ -298,7 +300,7 @@ while detected == True:
 
             # Calculate obstacle field decay
             rOVF = np.sqrt(np.square(x - ovf.xc) + np.square(y - ovf.yc))
-            p = df.VGauss(rOVF)
+            p = df.ActualTanh(rOVF)
 
             # Navigationl field component
             newCVF = cvf.GetVF_at_XY(params)
