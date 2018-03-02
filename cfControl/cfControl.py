@@ -99,6 +99,8 @@ def waypoints(wpt,vf_x, vf_y):
 # Create navigational field
 cvf = VectorField.CircleVectorField('Gradient')
 cvf.G = 1
+cvf.H = 2
+cvf.L = 0
 cvf.mCircleRadius = .5
 cvf.xc = 0
 cvf.yc = 0
@@ -108,8 +110,8 @@ cvf.NormVFVectors = True
 # Create obstacle field
 ovf = VectorField.CircleVectorField('Gradient')
 ovf.mCircleRadius = .0001
-ovf.G = -.01
-ovf.H = 2
+ovf.G = -1
+ovf.H = 0
 ovf.L = 0
 ovf.xc = 0
 ovf.yc = 1
@@ -179,14 +181,14 @@ detected = True
 TimeStart = time.time()
 
 print("Connecting to vicon stream. . .")
-cf_vicon = viconStream('CF_3')
-obstacle_vicon = viconStream('MOJO_JR')
+cf_vicon = viconStream('CF_1')
+obstacle_vicon = viconStream('CF_obstacle')
 time.sleep(2)
 print("Starting to send control messages . . .")
 
 def calcVF():
-    vfy = np.linspace(-2,2,43)
-    vfx = np.linspace(-2,2,43)
+    vfy = np.linspace(-2,2,17)
+    vfx = np.linspace(-2,2,17)
 
     ovf.xc = obstacle_vicon.X["x"]
     ovf.yc = obstacle_vicon.X["y"]
@@ -218,7 +220,6 @@ def calcVF():
             cvfu = newCVF.F[0]
             cvfv = newCVF.F[1]
 
-
             mag = np.sqrt(np.square(cvfu)+np.square(cvfv))
             XS[i][j] = vfx[i]
             YS[i][j] = vfy[j]
@@ -232,7 +233,7 @@ def calcVF():
 
             # US[i][j] =  UAVOID*p
             # VS[i][j] =  VAVOID*p
-            print("Decay: ",p,'\t',"Range: ",rOVF)
+            # print("Decay: ",p,'\t',"Range: ",rOVF)
 
 
 
@@ -261,17 +262,6 @@ def calcVF():
 #
 #         u = u + uAvoid
 #         v = v + vAvoid
-
-
-
-
-
-
-
-
-
-
-
 
 
 count = 0
@@ -311,10 +301,22 @@ while detected == True:
             newOVF = ovf.GetVF_at_XY(params)
             uAvoid = p * newOVF.F[0]
             vAvoid = p * newOVF.F[1]
+            magAvoid = np.sqrt(np.square(uAvoid) + np.square(vAvoid))
+
+            UAVOID = uAvoid / magAvoid
+            VAVOID = vAvoid / magAvoid
+
+            mag = np.sqrt(np.square(u) + np.square(v))
+            U = u/mag
+            V = v/mag
 
             # Total field component
-            u = u + uAvoid
-            v = v + vAvoid
+            uTotal = U + UAVOID
+            vTotal = V + VAVOID
+
+            MAG = np.sqrt(np.square(uTotal) + np.square(vTotal))
+            u = uTotal / MAG
+            v = vTotal / MAG
 
 
             # Lead rover with heading command
@@ -438,6 +440,8 @@ while detected == True:
                 set_point_data = r_set_point_str+p_set_point_str+y_set_point_str
                 control_data = roll_str+pitch_str+yaw_str+thrust_str
                 position_data   = x_str+y_str+z_str+heading_str+heading_rate
+
+                print(control_data)
 
                 f.write(time_str+set_point_data+wp_data+position_data+control_data)
 
