@@ -49,26 +49,31 @@ cmd = {
 
 
 def waypoints(wpt,vf_x, vf_y):
-    print(wpt)
+    # print(wpt)
     if wpt < 1:
        x = 0
        y = 0
-       z = 0.5
+       z = 0.3
        yaw = 0
 
     elif wpt >= 1 and wpt<=2:
         # print("hover")
-        x = 0.1
+        x = 0
         y = 0
-        z = 0.5
+        z = 0.3
         yaw = 0
 
 
     elif wpt > 2 and wpt <= 15 :
         # print("Vector field")
-        x = np.cos(ts-time.time())
-        y = np.sin(ts-time.time())
-        z = 0.5
+
+        x = 1
+        y = 1
+        z = 0.3
+
+        # x = np.cos(ts-time.time())
+        # y = np.sin(ts-time.time())
+        # z = 0.3
         yaw = 0
 
     # if wpt == 12:
@@ -131,8 +136,8 @@ plot_conn.connect("tcp://127.0.0.1:1515")
 
 
 
-r_pid = PID_RP(name="roll", P=29, I=5, D=50, Integrator_max=30, Integrator_min=-30, set_point=0, zmq_connection=pid_viz_conn)
-p_pid = PID_RP(name="pitch", P=29, I=5, D=50, Integrator_max=30, Integrator_min=-30, set_point=0, zmq_connection=pid_viz_conn)
+r_pid = PID_RP(name="roll", P=29, I=5, D=20, Integrator_max=30, Integrator_min=-30, set_point=0, zmq_connection=pid_viz_conn)
+p_pid = PID_RP(name="pitch", P=29, I=5, D=20, Integrator_max=30, Integrator_min=-30, set_point=0, zmq_connection=pid_viz_conn)
 y_pid = PID_RP(name="yaw", P=80, I=20, D=15, Integrator_max=10, Integrator_min=-5, set_point=0, zmq_connection=pid_viz_conn)
 t_pid = PID_RP(name="thrust", P=55, I=120, D=45, set_point=0.5, Integrator_max=120, Integrator_min=-0.01/0.035, zmq_connection=pid_viz_conn)
 
@@ -175,7 +180,7 @@ detected = True
 TimeStart = time.time()
 
 print("Connecting to vicon stream. . .")
-cf_vicon = viconStream('CF_1')
+cf_vicon = viconStream('CF_3')
 obstacle_vicon = viconStream('CF_obstacle')
 time.sleep(2)
 print("Starting to send control messages . . .")
@@ -229,8 +234,10 @@ while detected == True:
             xGoTo = [xCmd, yCmd, headingCmd]
 
             wpt = int((time.time() - TimeStart) / 2)
+
             # print("Waypoint:","\t",wpt,"\t","VF:",headingCmd)
             SPx, SPy, SPz, SP_yaw = waypoints(wpt, xCmd, yCmd)
+            print("SPX:",'\t',SPx,"SPy:",'\t',SPy,"SPz:",'\t',SPz,)
 
             #Changing setpoint to local coordinates
             theta = np.arctan2(SPy - y,SPx-x)

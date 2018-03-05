@@ -62,13 +62,13 @@ def waypoints(wpt,vf_x, vf_y):
 
     elif wpt >= 1 and wpt<=2:
         # print("hover")
-        x = 0
+        x = 0.1
         y = 0
         z = 0.5
         yaw = 0
 
 
-    elif wpt > 2 and wpt <= 15 :
+    elif wpt > 2 and wpt <= 30 :
         # print("Vector field")
         x = vf_x
         y = vf_y
@@ -82,7 +82,7 @@ def waypoints(wpt,vf_x, vf_y):
     #     yaw = 0
     #
 
-    elif wpt>15 and wpt<=17:
+    elif wpt>30 and wpt<=32:
         x = 0
         y = 0
         z = 0.25
@@ -99,9 +99,9 @@ def waypoints(wpt,vf_x, vf_y):
 # Create navigational field
 cvf = VectorField.CircleVectorField('Gradient')
 cvf.G = 1
-cvf.H = 2
+cvf.H = 1
 cvf.L = 0
-cvf.mCircleRadius = .5
+cvf.mCircleRadius = 1
 cvf.xc = 0
 cvf.yc = 0
 cvf.bUsePathFunc = False
@@ -110,8 +110,9 @@ cvf.NormVFVectors = True
 # Create obstacle field
 ovf = VectorField.CircleVectorField('Gradient')
 ovf.mCircleRadius = .0001
+actualRadius = .05
 ovf.G = -1
-ovf.H = 0
+ovf.H = 1
 ovf.L = 0
 ovf.xc = 0
 ovf.yc = 1
@@ -137,10 +138,10 @@ plot_conn.connect("tcp://127.0.0.1:1515")
 
 
 
-r_pid = PID_RP(name="roll", P=29, I=2.5, D=17, Integrator_max=15, Integrator_min=-15, set_point=0, zmq_connection=pid_viz_conn)
-p_pid = PID_RP(name="pitch", P=29, I=2.5, D=17, Integrator_max=15, Integrator_min=-15, set_point=0, zmq_connection=pid_viz_conn)
+r_pid = PID_RP(name="roll", P=29, I=2.5, D=15, Integrator_max=15, Integrator_min=-15, set_point=0, zmq_connection=pid_viz_conn)
+p_pid = PID_RP(name="pitch", P=29, I=2.5, D=15, Integrator_max=15, Integrator_min=-15, set_point=0, zmq_connection=pid_viz_conn)
 y_pid = PID_RP(name="yaw", P=80, I=20, D=15, Integrator_max=10, Integrator_min=-5, set_point=0, zmq_connection=pid_viz_conn)
-t_pid = PID_RP(name="thrust", P=55, I=120, D=45, set_point=0.5, Integrator_max=120, Integrator_min=-0.01/0.035, zmq_connection=pid_viz_conn)
+t_pid = PID_RP(name="thrust", P=45, I=120, D=45, set_point=0.5, Integrator_max=120, Integrator_min=-0.01/0.035, zmq_connection=pid_viz_conn)
 
 
 
@@ -187,8 +188,8 @@ time.sleep(2)
 print("Starting to send control messages . . .")
 
 def calcVF():
-    vfy = np.linspace(-2,2,17)
-    vfx = np.linspace(-2,2,17)
+    vfy = np.linspace(-2,2,31)
+    vfx = np.linspace(-2,2,31)
 
     ovf.xc = obstacle_vicon.X["x"]
     ovf.yc = obstacle_vicon.X["y"]
@@ -204,8 +205,8 @@ def calcVF():
             params.x = vfx[i]
             params.y = vfy[j]
 
-            rOVF = np.sqrt(np.square(vfx[i] - ovf.xc) + np.square(vfy[j] - ovf.yc))
-            p = df.ActualTanh(rOVF)
+            rOVF = np.sqrt(np.square(vfx[i] - ovf.xc) + np.square(vfy[j] - ovf.yc))/actualRadius
+            p = df.VLin(rOVF)
 
             newOVF = ovf.GetVF_at_XY(params)
             uAvoid =  newOVF.F[0]
@@ -289,8 +290,8 @@ while detected == True:
             params.y = y
 
             # Calculate obstacle field decay
-            rOVF = np.sqrt(np.square(x - ovf.xc) + np.square(y - ovf.yc))
-            p = df.ActualTanh(rOVF)
+            rOVF = np.sqrt(np.square(x - ovf.xc) + np.square(y - ovf.yc))/actualRadius
+            p = df.VLin(rOVF)
 
             # Navigationl field component
             newCVF = cvf.GetVF_at_XY(params)
@@ -299,12 +300,12 @@ while detected == True:
 
             # Obstacle field component
             newOVF = ovf.GetVF_at_XY(params)
-            uAvoid = p * newOVF.F[0]
-            vAvoid = p * newOVF.F[1]
-            magAvoid = np.sqrt(np.square(uAvoid) + np.square(vAvoid))
+            uAvoid = newOVF.F[0]
+            vAvoid = newOVF.F[1]
 
-            UAVOID = uAvoid / magAvoid
-            VAVOID = vAvoid / magAvoid
+            magAvoid = np.sqrt(np.square(uAvoid) + np.square(vAvoid))
+            UAVOID = p*uAvoid / magAvoid
+            VAVOID = p*vAvoid / magAvoid
 
             mag = np.sqrt(np.square(u) + np.square(v))
             U = u/mag
@@ -320,7 +321,7 @@ while detected == True:
 
 
             # Lead rover with heading command
-            d = .03125 * (-(np.tanh(2*np.pi*(cf_vicon.X["speed"]/2) - np.pi) + 1) + 2)
+            d = .05 #* (-(np.tanh(2*np.pi*(cf_vicon.X["speed"]/2) - np.pi) + 1) + 2)
             # print(d)
             headingCmd = np.arctan2(v, u)
             xCmd = d * np.cos(headingCmd) + x

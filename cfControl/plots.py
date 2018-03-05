@@ -172,6 +172,7 @@ class responsePlots():
                 self.ax4.grid(True)
                 self.ax4.set_ylabel('yaw (degrees')
 
+                print(self.u)
 
 
                 #2D position in vicon area

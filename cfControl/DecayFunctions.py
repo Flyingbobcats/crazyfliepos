@@ -25,3 +25,14 @@ def ActualTanh(rrin):
     G = -((np.tanh(2*np.pi*rrin/Ra-np.pi))+1)/2 + 1
 
     return G
+
+def VLin(rrin):
+    G = (-0.5) * rrin + 1
+
+    if G < 0:
+        G = 0
+
+    if rrin >= 1.4:
+        G = 0
+
+    return G
