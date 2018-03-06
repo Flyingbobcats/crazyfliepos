@@ -38,7 +38,7 @@ class viconStream():
 
     def run(self,QueueList):
         #Switch comments to use fake vicon data
-	    vc = viconClient.viconClient("192.168.0.197",801)
+        vc = viconClient.viconClient("192.168.0.197",801)
         #vc = fakeviconClient.fakeviconClient()
         vc.vicon_connect()
 

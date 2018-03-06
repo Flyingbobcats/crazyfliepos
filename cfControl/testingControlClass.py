@@ -5,7 +5,7 @@ import DecayFunctions as df
 import threading
 import time
 
-uav = cfControlClass('CF_3',(True,'LandTest'),True)
+uav = cfControlClass('CF_1',(True,'HunterTest'),True)
 
 
 # Create navigational field
@@ -23,7 +23,7 @@ if uav.active:
     uav.takeoff(.3)
     time.sleep(5)
 
-for i in range(0,100):
+for i in range(0,50):
     X = uav.QueueList["vicon"].get()
 
     params = VectorField.VFData()
@@ -40,21 +40,22 @@ for i in range(0,100):
     uNorm = u / MAG
     vNorm = v / MAG
 
-    d = .125
+    d = .125 / 2
     headingCmd = np.arctan2(v, u)
     xCmd = d * np.cos(headingCmd) + X["x"]
     yCmd = d * np.sin(headingCmd) + X["y"]
     print(xCmd, yCmd)
-    uav.goto(xCmd,yCmd,0.5)
+    uav.goto(xCmd,yCmd,0.3)
     # time.sleep(5)
     # uav.goto(0,0,1)
-    time.sleep(.05)
+
+    time.sleep(.1)
+
 
 uav.land()
-
-
+time.sleep(2)
 uav.QueueList["controlShutdown"].put('KILL')       #Send throttle down message to control thread
-
+time.sleep(2)
 print('dead')
 
 
