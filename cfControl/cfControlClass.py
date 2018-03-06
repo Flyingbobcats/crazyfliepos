@@ -1,117 +1,232 @@
-import numpy as np
-import atexit
-import zmq
 import time
-from pid import PID, PID_RP
-import simplejson
+import numpy as np
+from multiprocessing import Queue
+import threading
+
+from PID_CLASS import PID_CLASS
 from viconStream import viconStream
+from responsePlots import responsePlots
+from logger import logger
+
 
 class cfControlClass():
-    def __init__(self,name,savelog):
-        #Communication
-        self.context = zmq.Context()
-        self.clientAddress = "tcp://127.0.0.1:1212"
+    def __init__(self,uavName='CF_1',logEnabled = (True,'Default'),plotsEnabled=True):
 
-        self.cmd = {
-            "version": 1,
-            "client_name": "N/A",
-            "ctrl": {
-                "roll": 0.0,
-                "pitch": 0.0,
-                "yaw": 0.0,
-                "thrust": 0.0
-            }
-        }
+        self.time_start=time.time()
+        self.printUpdateRate = False
+        self.displayMessageMonitor = False
 
-        #Controller gain default values
-        self.rPID_P = 29
-        self.rPID_I = 2.5
-        self.rPID_D = 17
-        self.rPID_set_point = 0
+        self.active = True
+        #Class Settings
+        self.name = uavName
+        self.logEnabled = logEnabled[0]
+        self.logName = logEnabled[1]
 
-        self.pPID_P = 29
-        self.pPID_I = 2.5
-        self.pPID_D = 17
-        self.pPID_set_point = 0
-
-        self.yPID_P = 80
-        self.yPID_I = 20
-        self.yPID_D = 15
-
-        self.tPID_P = 55
-        self.tPID_I = 120
-        self.tPID_D = 45
-        self.tPID_set_point = 0
-
-        #Setup PID controllers
-        self.r_pid = PID_RP(name="roll", P=self.rPID_P, I=self.rPID_I, D=self.rPID_D, Integrator_max=15, Integrator_min=-15, set_point=0,
-                       zmq_connection='none')
-        self.p_pid = PID_RP(name="pitch", P=self.pPID_P, I=self.pPID_I, D=self.pPID_D, Integrator_max=15, Integrator_min=-15, set_point=0,
-                       zmq_connection='none')
-        self.y_pid = PID_RP(name="yaw", P=self.yPID_P, I=self.yPID_I, D=self.yPID_D, Integrator_max=10, Integrator_min=-5, set_point=0,
-                       zmq_connection='none')
-        self.t_pid = PID_RP(name="thrust", P=self.tPID_P, I=self.tPID_I, D=self.tPID_D, set_point=0.5, Integrator_max=120,
-                       Integrator_min=-0.01 / 0.035, zmq_connection='none')
-
-
-        #UAV information
-        self.name = name
-        self.mode = 'none'
-        self.x = []
-        self.y = []
-        self.z = []
-        self.yaw = []
+        #Queue Dictionary
+        self.QueueList = {}
+        self.QueueList["vicon"] = Queue(maxsize=10)
+        self.QueueList["sp"] = Queue()
+        self.QueueList["dataLogger"] = Queue()
+        self.QueueList["threadMessage"] = Queue()
+        self.QueueList["controlShutdown"] = Queue()
 
 
 
+        # Startup Proceedure
+        # 1) Message Monitor
+        # 2) Vicon
+        # 3) PID
 
-        #Settings
-        self.update_rate = 0.01
-        self.time_start = time.time()
-        self.savelog = savelog
+        thread = threading.Thread(target=self.messageMonitor, args=())
+        thread.daemon = True
+        thread.start()
 
-        self.startup()
 
-    def startup(self):
-        print('Connecting to ',self.clientAddress,' for ZMQ comd messages. . .')
-        self.client_conn = self.context.socket(zmq.PUSH)
-        self.client_conn.connect(self.clientAddress)
-        print('Sending motor release command')
+        self.startLog()
         time.sleep(1)
+        self.startVicon()
+        time.sleep(3)
 
+        self.startControl()
+        time.sleep(1)
+        # self.startPlots()
+
+        # updown = threading.Thread(target=self.upDown,args=())
+        # updown.daemon = True
+        # updown.start()
+
+        if self.printUpdateRate:
+            t = threading.Thread(target=self.printQ,args=())
+            t.daemon = True
+            t.start()
+
+        # grid = threading.Thread(target=self.gridFlight(),args=())
+        # grid.daemon = True
+        # grid.start()
+
+
+        if self.printUpdateRate:
+            t = threading.Thread(target=self.printQ,args=())
+            t.daemon = True
+            t.start()
+
+
+    def messageMonitor(self):
+        print('Starting message monitor')
+        time.sleep(1)
+        while True:
+                try:
+                    message = self.QueueList["threadMessage"].get(block=False)
+
+                    if message["mess"] == "VICON_CONNECTED":
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+                    elif message["mess"] == 'NO_INIT_VICON_DATA':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+                    elif message["mess"] == 'VICON_DATA_FULL':
+                        # print(message["mess"], '\t', "Queue size:", str(message["data"]))
+                        pass
+
+                    elif message["mess"] == 'DEAD_PACKET_EXCEEDS_LIMIT':
+                        print(message["mess"], '\t', str(message["data"]))
+                        self.cf_vicon.active=False
+
+                    elif message["mess"] == 'VICON_DEACTIVATED':
+                        print(message["mess"], '\t', str(message["data"]))
+
+
+
+                    #Control messages
+                    elif message["mess"] == 'MOTOR_UNLOCK_SENT':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+                    elif message["mess"] == 'VICON_QUEUE_EXCEPTION_ERROR':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+
+                    elif message["mess"] == 'NEW_SP_ACCEPTED':
+                        print(message["mess"], '\t', "Position:", str(message["data"]))
+
+
+
+                    elif message["mess"] == 'ATTEMPTING_TO_SEND_KILL_CMD':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+                    elif message["mess"] == 'KILL_CMD_SENT':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+
+                    elif message["mess"] == 'THROTTLE_DOWN_START':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+                    elif message["mess"] == 'THROTTLE_DOWN_COMPLETE':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
+                    else:
+                        print(message)
+                except:
+                    pass
+                time.sleep(0.01)
+
+
+
+    def startVicon(self):
         print("Connecting to vicon stream. . .")
-        self.cf_vicon = viconStream(self.name)
+        self.cf_vicon = viconStream(self.name,self.QueueList)
+        # self.cf_vicon = viconStream(self.name,self.vicon_queue,self.error_queue)
+
+    def startControl(self):
+        self.t1 = time.time()
+        print("Starting control thread. . .")
+        # self.ctrl = PID_CLASS(self.vicon_queue,self.setpoint_queue,self.logger_queue,self.kill_queue)
+        self.ctrl = PID_CLASS(self.QueueList,self.name)
+
+    def startLog(self):
+        self.logger = logger(self.logName,self.QueueList)
+
+    def startPlots(self):
+        self.Plots = responsePlots(self.QueueList)
+
+
+
+#######################################################################################################################
+    # Debugging utilities
+
+    def printQ(self):
+        while self.active:
+            # print('Vicon update rate:',self.cf_vicon.update_rate,'\t','PID update rate:',self.ctrl.update_rate)#,'\t','Log:',self.logger.update_rate,'\t')
+            print('Vicon update rate:',self.cf_vicon.update_rate,'\t','PID:',self.ctrl.update_rate,'\t')
+
+            time.sleep(0.5)
+            # os.system('cls')
+
+
+    def gridFlight(self):
+        time.sleep(5)
+        self.takeoff(0.5)
         time.sleep(2)
+        self.goto(1,0,0.5)
+        time.sleep(1)
+        self.goto(1,1,0.5)
+        time.sleep(1)
+        self.goto(0,1,0.5)
+        time.sleep(1)
+        self.goto(0,0,0.5)
+        time.sleep(2)
+        self.land()
 
-        print(self.cf_vicon.X["x"])
-
-    def releaseMotors(self):
-        self.cmd["ctrl"]["roll"] = 0
-        self.cmd["ctrl"]["pitch"] = 0
-        self.cmd["ctrl"]["yaw"] = 0
-        self.cmd["ctrl"]["thrust"] = 0
-        self.client_conn.send_json(self.cmd)
-        print('Motor release cmd sent')
-
-
-    def createLog(self):
-        self.logName = 'log.txt'
-        self.f = open(self.logName,"w+")
-
-    def kill(self):
-        #When program is killed, close the log file
-        self.f.close()
-        #Add landing functionality when killed if vehicle is in air
+        self.QueueList["controlShutdown"].put('THROTTLE_DOWN')
 
 
-    def arm(self):
-        #set throttle position to 0 and send message
-        pass
+    def upDown(self):
+        time.sleep(5)
+        self.takeoff(1)
+        time.sleep(10)
+        self.land()
+        self.QueueList["controlShutdown"].put('THROTTLE_DOWN')
+
+        # time.sleep(5)
+        # self.takeoff(0.5)
+        # time.sleep(10)
+        # self.QueueList["controlShutdown"].put('KILL')
+
+
+
+
+#######################################################################################################################
+        #User end functions
+
 
     def takeoff(self,height):
-        #Takeoff and hold height
-        pass
+        sp = {}
+        X = self.QueueList["vicon"].get()
+        sp["x"] = X["x"]
+        sp["y"] = X["y"]
+        sp["z"] = height
+        self.QueueList["sp"].put(sp)
 
     def land(self):
-        #hover throttle position and slowly decrease z-setpoint
-        pass
+        sp = {}
+        X = self.QueueList["vicon"].get()
+        # sp["x"] = X["x"]
+        # sp["y"] = X["y"]
+        sp["x"] = X["x"]
+        sp["y"] = X["y"]
+        sp["z"] = X["z"]
+        while sp["z"]>0:
+            sp["z"] = sp["z"]-0.005
+            self.QueueList["sp"].put(sp)
+            time.sleep(0.01)
+
+        # self.QueueList["kill"].put(True)
+
+
+    def goto(self,x,y,z):
+        sp = {}
+        sp["x"] = x
+        sp["y"] = y
+        sp["z"] = z
+        self.QueueList["sp"].put(sp)
+
+

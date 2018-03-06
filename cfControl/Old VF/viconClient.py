@@ -8,6 +8,7 @@ class viconClient():
 
 
     def vicon_connect(self):
+        print("Connecting to Vicon...")
         client = PyVicon()
         client.connect(self.ip, self.port)
 
@@ -30,7 +31,7 @@ class viconClient():
                 if (s == name):
                     trans = client.translation(s)
                     if (trans[0] == 0.0 and trans[1] == 0.0 and trans[2] == 0.0):
-                        # print('dead packet')
+                        print('dead packet')
                         x_ENU = False
                         y_ENU = False
                         z_ENU = False
