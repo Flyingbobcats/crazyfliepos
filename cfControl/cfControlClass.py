@@ -13,7 +13,7 @@ class cfControlClass():
     def __init__(self,uavName='CF_1',logEnabled = (True,'Default'),plotsEnabled=True):
 
         self.time_start=time.time()
-        self.printUpdateRate = False
+        self.printUpdateRate = True
         self.displayMessageMonitor = False
 
         self.active = True
@@ -24,7 +24,8 @@ class cfControlClass():
 
         #Queue Dictionary
         self.QueueList = {}
-        self.QueueList["vicon"] = Queue(maxsize=10)
+
+
         self.QueueList["sp"] = Queue()
         self.QueueList["dataLogger"] = Queue()
         self.QueueList["threadMessage"] = Queue()
@@ -101,7 +102,7 @@ class cfControlClass():
                     elif message["mess"] == 'MOTOR_UNLOCK_SENT':
                         print(message["mess"], '\t', "Object Name:", str(message["data"]))
 
-                    elif message["mess"] == 'VICON_QUEUE_EXCEPTION_ERROR':
+                    elif message["mess"] == 'VICON_ZMQ_EXCEPTION_ERROR':
                         print(message["mess"], '\t', "Object Name:", str(message["data"]))
 
 
@@ -157,6 +158,7 @@ class cfControlClass():
         while self.active:
             # print('Vicon update rate:',self.cf_vicon.update_rate,'\t','PID update rate:',self.ctrl.update_rate)#,'\t','Log:',self.logger.update_rate,'\t')
             print('Vicon update rate:',self.cf_vicon.update_rate,'\t','PID:',self.ctrl.update_rate,'\t')
+
 
             time.sleep(0.5)
             # os.system('cls')

@@ -3,6 +3,7 @@ import zmq
 import time
 from pid import PID_RP
 import threading
+import json
 
 
 
@@ -14,9 +15,19 @@ class PID_CLASS():
 
         self.QueueList = QueueList
 
+        #Setting up ZMQ Sockets
         self.context = zmq.Context()
         self.client_conn = self.context.socket(zmq.PUSH)
         self.client_conn.connect("tcp://127.0.0.1:1212")
+
+
+        #Experimental ZMQ subscription
+        vicon_port = 1501
+        self.vicon_socket = self.context.socket(zmq.SUB)
+        self.vicon_socket.setsockopt(zmq.CONFLATE, True)
+        self.vicon_socket.connect("tcp://localhost:%s" % vicon_port)
+        self.vicon_socket.setsockopt_string(zmq.SUBSCRIBE, 'VICON')
+
 
         self.message = {}
         self.message["mess"] = None
@@ -107,22 +118,17 @@ class PID_CLASS():
             active = False
             self.kill()
 
-        for i in range(0,QueueList["vicon"].qsize()):
-            #Clear vicon Q before starting
-            QueueList["vicon"].get()
-
-
         while active:
             t1 = time.time()
             time.sleep(self.sleep_rate)
             try:
-                if QueueList["vicon"].full():
-                    pass
-
                 try:
-                    X = QueueList["vicon"].get(timeout=0.2)
+                    VICON = self.vicon_socket.recv_string()
+                    topic,data = VICON.split('VICON')
+                    X = json.loads(data)
+
                 except:
-                    self.message["mess"] = 'VICON_QUEUE_EXCEPTION_ERROR'
+                    self.message["mess"] = 'VICON_ZMQ_EXCEPTION_ERROR'
                     self.message["data"] = self.name
                     self.QueueList["threadMessage"].put(self.message)
                     self.kill()

@@ -1,6 +1,8 @@
 import threading
 import time
 import viconClient
+import zmq
+import json
 
 from utilities import fakeviconClient
 
@@ -38,8 +40,15 @@ class viconStream():
 
     def run(self,QueueList):
         vc = viconClient.viconClient("192.168.0.197",801)
-        # vc = fakeviconClient.fakeviconClient()
         vc.vicon_connect()
+
+        #Inserting zmq pub
+        self.topic = 'VICON'
+        port = 1501
+        context = zmq.Context()
+        socket = context.socket(zmq.PUB)
+        socket.setsockopt(zmq.CONFLATE,True)
+        socket.bind("tcp://*:%s" % port)
 
 
 
@@ -75,13 +84,9 @@ class viconStream():
                 self.yp = X["yaw"]
                 self.DeadPacketCount = 0
 
-                if QueueList["vicon"].full():
-                    self.message["mess"] = 'VICON_DATA_FULL'
-                    self.message["data"] = str(QueueList["vicon"].qsize())
-                    QueueList["threadMessage"].put(self.message)
-                    time.sleep(0.0001)
-                else:
-                    QueueList["vicon"].put(self.X)
+                #Publish latest vicon data
+                data = json.dumps(self.X)
+                socket.send_string("%s %s" % (self.topic, data))
 
             else:
                 self.DeadPacketCount = self.DeadPacketCount + 1
@@ -89,8 +94,6 @@ class viconStream():
                     self.message["mess"] = 'DEAD_PACKET_EXCEEDS_LIMIT'
                     self.message["data"] = str(self.DeadPacketCount) + ' Packets lost for :' + self.name
                     QueueList["threadMessage"].put(self.message)
-
-
             time.sleep(self.sleep_rate)
             t2 = time.time()
 
