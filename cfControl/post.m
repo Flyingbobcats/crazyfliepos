@@ -5,22 +5,22 @@ close all
 
 filename = uigetfile('.txt');
 % disp(filename)
-DATA = importfile(filename,1,10000000);
+[time,x,y,z,yaw,x_sp,y_sp,z_sp,yaw_sp] = importfile1(filename,1,10000000);
 
 % retrieving UAV position from DATA and storing it in 'position'
-position(:,1) = DATA(:,16); % x coordinates
-position(:,2) = DATA(:,18); % y coordinates
-position(:,3) = DATA(:,20); % z coordinates
-yaw_rate = DATA(:,24);
-yaw_sp = DATA(:,8);
+position(:,1) = x; % x coordinates
+position(:,2) = y; % y coordinates
+position(:,3) = z; % z coordinates
+yaw_rate = yaw;
+yaw_sp = yaw_sp;
 
 % retrieving time from DATA
-t = DATA(:,2);
+t = time;
 
 % retrieving waypoint position from DATA and storing it in 'waypoint'
-waypoint(:,1) = DATA(:,10);
-waypoint(:,2) = DATA(:,12);
-waypoint(:,3) = DATA(:,14);
+waypoint(:,1) = x_sp;
+waypoint(:,2) = y_sp;
+waypoint(:,3) = z_sp;
 
 % storing unique waypoints in 'wpts'
 wpts = unique(waypoint,'rows');

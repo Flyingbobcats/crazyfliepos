@@ -47,8 +47,9 @@ class cfControlClass():
         self.startVicon()
         time.sleep(3)
 
-        self.startControl()
-        time.sleep(1)
+        if uavName is not 'CF_obstacle':
+            self.startControl()
+            time.sleep(1)
         # self.startPlots()
 
         # updown = threading.Thread(target=self.upDown,args=())
