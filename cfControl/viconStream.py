@@ -9,11 +9,12 @@ from utilities import fakeviconClient
 
 class viconStream():
     # def __init__(self, name,q,error_queue):
-    def __init__(self, name,QueueList):
+    def __init__(self, name,QueueList,messageSocket):
 
         self.name = name
         self.DeadPacketCount = 0
         self.MaxDeadPackets = 20
+        self.messageSocket = messageSocket
 
 
         #active will be switched to false by the system monitor
@@ -39,16 +40,17 @@ class viconStream():
         thread.start()
 
     def run(self,QueueList):
-        vc = viconClient.viconClient("192.168.0.197",801)
+        # vc = viconClient.viconClient("192.168.0.197",801)
+        vc = fakeviconClient.fakeviconClient()
         vc.vicon_connect()
 
         #Inserting zmq pub
-        self.topic = 'VICON'
-        port = 1501
         context = zmq.Context()
+        self.topic = 'VICON'
+        viconPort = 1501
         socket = context.socket(zmq.PUB)
         socket.setsockopt(zmq.CONFLATE,True)
-        socket.bind("tcp://*:%s" % port)
+        socket.bind("tcp://*:%s" % viconPort)
 
 
 
@@ -94,6 +96,11 @@ class viconStream():
                     self.message["mess"] = 'DEAD_PACKET_EXCEEDS_LIMIT'
                     self.message["data"] = str(self.DeadPacketCount) + ' Packets lost for :' + self.name
                     QueueList["threadMessage"].put(self.message)
+
+                    # print(data)
+                    data = json.dumps(self.message)
+                    self.messageSocket.send_string("%s %s" % ('message', data))
+
             time.sleep(self.sleep_rate)
             t2 = time.time()
 

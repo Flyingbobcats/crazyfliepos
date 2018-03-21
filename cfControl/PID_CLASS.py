@@ -10,40 +10,46 @@ import json
 class PID_CLASS():
     def __init__(self,QueueList = {},name = ''):
 
+
+
         self.time_start = time.time()
         self.name = name
-
         self.QueueList = QueueList
 
-        #Setting up ZMQ Sockets
+
+        # Options
+        self.dispControlMessage = False
+        self.sleep_rate = 0.0001
+        self.update_rate = []
+
+
+        #ZMQ Socket for cfclient control input
         self.context = zmq.Context()
         self.client_conn = self.context.socket(zmq.PUSH)
         self.client_conn.connect("tcp://127.0.0.1:1212")
 
 
-        #Experimental ZMQ subscription
+        #ZMQ Socket for recieving vicon data
         vicon_port = 1501
         self.vicon_socket = self.context.socket(zmq.SUB)
         self.vicon_socket.setsockopt(zmq.CONFLATE, True)
+        self.vicon_socket.setsockopt(zmq.RCVTIMEO,10)
         self.vicon_socket.connect("tcp://localhost:%s" % vicon_port)
         self.vicon_socket.setsockopt_string(zmq.SUBSCRIBE, 'VICON')
 
 
+        #Message format
         self.message = {}
         self.message["mess"] = None
         self.message["data"] = None
 
+        #Start PID Thread
         t = threading.Thread(target=self.run,args=(QueueList,),name="PID")
         t.daemon = True
         t.start()
 
 
     def run(self,QueueList):
-        # Options
-        self.dispControlMessage = False
-
-        self.sleep_rate = 0.0001
-        self.update_rate = []
 
         self.cmd = {
             "version": 1,
@@ -57,7 +63,7 @@ class PID_CLASS():
         }
 
         if QueueList["controlShutdown"].empty():
-            active = True
+            self.active = True
             self.SPx = 0
             self.SPy = 0
             self.SPz = 0
@@ -115,10 +121,10 @@ class PID_CLASS():
             SP_yaw = 0
 
         else:
-            active = False
+            self.active = False
             self.kill()
 
-        while active:
+        while self.active:
             t1 = time.time()
             time.sleep(self.sleep_rate)
             try:
@@ -151,13 +157,6 @@ class PID_CLASS():
                     self.message["mess"] = 'NEW_SP_ACCEPTED'
                     self.message["data"] = new_set_point
                     self.QueueList["threadMessage"].put(self.message)
-
-
-                    #Experimental, may cause unstable flight
-                    self.r_pid.Integrator = 0
-                    self.p_pid.Integrator = 0
-                    # self.y_pid.Integrator = 0
-                    # self.t_pid.Integrator = 0
 
 
                 # Changing setpoint to local coordinates
@@ -228,9 +227,10 @@ class PID_CLASS():
                 self.QueueList["dataLogger"].put_nowait(pkt)
 
                 if not self.QueueList["controlShutdown"].empty():
+                    print('message in  q')
                     if self.QueueList["controlShutdown"].get() == 'THROTTLE_DOWN':
                         self.throttleDown()
-                        active = False
+                        self.active = False
                     else:
                         self.kill()
                     return
@@ -265,6 +265,7 @@ class PID_CLASS():
                 self.QueueList["threadMessage"].put(self.message)
 
                 self.sentKill = True
+                self.active = False
             except:
                 pass
 

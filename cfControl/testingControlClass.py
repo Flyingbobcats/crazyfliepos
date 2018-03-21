@@ -4,21 +4,26 @@ import threading
 import time
 
 uav = cfControlClass('CF_1',(True,'LandTest'),True)
-
+uav.printUpdateRate = False
 while uav.active:
 
-    time.sleep(5)
-    uav.goto(1,1,1)
-    time.sleep(5)
-    uav.goto(0,0,0)
+    time.sleep(1)
 
+    print(uav.ctrl.active)
+    print(uav.cf_vicon.active)
+    if uav.ctrl.active == False and uav.cf_vicon.active == False:
+        uav.active = False
+        print(uav.active)
+        time.sleep(1)
 
-
-
-
-uav.QueueList["controlShutdown"].put('KILL')       #Send throttle down message to control thread
 
 print('dead')
+
+#Emtpy the Queues to properly shut down handler threads
+for i in uav.QueueList:
+    print("Emptying Queue: ", i)
+    while not uav.QueueList[i].empty():
+        uav.QueueList[i].get()
 
 
 threads = threading.enumerate()

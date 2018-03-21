@@ -2,11 +2,12 @@ import time
 import numpy as np
 from multiprocessing import Queue
 import threading
-
 from PID_CLASS import PID_CLASS
 from viconStream import viconStream
-from responsePlots import responsePlots
+# from responsePlots import responsePlots
 from logger import logger
+import zmq
+import json
 
 
 class cfControlClass():
@@ -25,12 +26,19 @@ class cfControlClass():
         #Queue Dictionary
         self.QueueList = {}
 
-
         self.QueueList["sp"] = Queue()
         self.QueueList["dataLogger"] = Queue()
         self.QueueList["threadMessage"] = Queue()
         self.QueueList["controlShutdown"] = Queue()
 
+
+        #Sharing publisher information
+        self.context = zmq.Context()
+        self.topic = 'MESSAGE'
+        viconPort = 1502
+        self.socket = self.context.socket(zmq.PUB)
+        self.socket.setsockopt(zmq.CONFLATE, True)
+        self.socket.bind("tcp://*:%s" % viconPort)
 
 
         # Startup Proceedure
@@ -41,29 +49,11 @@ class cfControlClass():
         thread = threading.Thread(target=self.messageMonitor, args=())
         thread.daemon = True
         thread.start()
-
-
-        self.startLog()
         time.sleep(1)
         self.startVicon()
         time.sleep(3)
-
         self.startControl()
         time.sleep(1)
-        # self.startPlots()
-
-        # updown = threading.Thread(target=self.upDown,args=())
-        # updown.daemon = True
-        # updown.start()
-
-        if self.printUpdateRate:
-            t = threading.Thread(target=self.printQ,args=())
-            t.daemon = True
-            t.start()
-
-        # grid = threading.Thread(target=self.gridFlight(),args=())
-        # grid.daemon = True
-        # grid.start()
 
 
         if self.printUpdateRate:
@@ -75,7 +65,7 @@ class cfControlClass():
     def messageMonitor(self):
         print('Starting message monitor')
         time.sleep(1)
-        while True:
+        while self.active:
                 try:
                     message = self.QueueList["threadMessage"].get(block=False)
 
@@ -92,11 +82,10 @@ class cfControlClass():
                     elif message["mess"] == 'DEAD_PACKET_EXCEEDS_LIMIT':
                         print(message["mess"], '\t', str(message["data"]))
                         self.cf_vicon.active=False
+                        self.QueueList["controlShutdown"].put('THROTTLE_DOWN')
 
                     elif message["mess"] == 'VICON_DEACTIVATED':
                         print(message["mess"], '\t', str(message["data"]))
-
-
 
                     #Control messages
                     elif message["mess"] == 'MOTOR_UNLOCK_SENT':
@@ -108,7 +97,6 @@ class cfControlClass():
 
                     elif message["mess"] == 'NEW_SP_ACCEPTED':
                         print(message["mess"], '\t', "Position:", str(message["data"]))
-
 
 
                     elif message["mess"] == 'ATTEMPTING_TO_SEND_KILL_CMD':
@@ -130,12 +118,9 @@ class cfControlClass():
                     pass
                 time.sleep(0.01)
 
-
-
     def startVicon(self):
         print("Connecting to vicon stream. . .")
-        self.cf_vicon = viconStream(self.name,self.QueueList)
-        # self.cf_vicon = viconStream(self.name,self.vicon_queue,self.error_queue)
+        self.cf_vicon = viconStream(self.name,self.QueueList,self.socket)
 
     def startControl(self):
         self.t1 = time.time()
@@ -177,7 +162,6 @@ class cfControlClass():
         self.goto(0,0,0.5)
         time.sleep(2)
         self.land()
-
         self.QueueList["controlShutdown"].put('THROTTLE_DOWN')
 
 
