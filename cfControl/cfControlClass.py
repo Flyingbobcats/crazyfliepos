@@ -11,13 +11,13 @@ import json
 
 
 class cfControlClass():
-    def __init__(self,uavName='CF_1',logEnabled = (True,'Default'),plotsEnabled=True):
+    def __init__(self,uavName='CF_1',logEnabled = (True,'LogFileName'),plotsEnabled=True):
 
         self.time_start=time.time()
-        self.printUpdateRate = True
+        self.printUpdateRate = False
         self.displayMessageMonitor = False
 
-        self.active = True
+        self.active = False
         #Class Settings
         self.name = uavName
         self.logEnabled = logEnabled[0]
@@ -46,6 +46,10 @@ class cfControlClass():
         # 2) Vicon
         # 3) PID
 
+
+
+    def startup(self):
+        self.active = True
         thread = threading.Thread(target=self.messageMonitor, args=())
         thread.daemon = True
         thread.start()
@@ -112,11 +116,16 @@ class cfControlClass():
                     elif message["mess"] == 'THROTTLE_DOWN_COMPLETE':
                         print(message["mess"], '\t', "Object Name:", str(message["data"]))
 
+
+                    elif message["mess"] =='CONTROL_DEACTIVATED':
+                        print(message["mess"], '\t', "Object Name:", str(message["data"]))
+
                     else:
                         print(message)
                 except:
                     pass
                 time.sleep(0.01)
+
 
     def startVicon(self):
         print("Connecting to vicon stream. . .")
@@ -133,6 +142,14 @@ class cfControlClass():
 
     def startPlots(self):
         self.Plots = responsePlots(self.QueueList)
+
+
+
+    def shutdown(self):
+        for i in self.QueueList:
+            # print("Emptying Queue: ", i)
+            while not self.QueueList[i].empty():
+                self.QueueList[i].get()
 
 
 

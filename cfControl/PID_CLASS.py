@@ -266,6 +266,9 @@ class PID_CLASS():
 
                 self.sentKill = True
                 self.active = False
+                self.message["mess"] = 'CONTROL_DEACTIVATED'
+                self.message["data"] = self.name
+                self.QueueList["threadMessage"].put(self.message)
             except:
                 pass
 
