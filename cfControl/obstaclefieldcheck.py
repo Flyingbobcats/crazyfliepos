@@ -1,14 +1,14 @@
 from cfControlClass import cfControlClass
 import VFControl as VectorField
 import numpy as np
-import DecayFunctions as df
-import threading
-import time
 import matplotlib.pyplot as plt
+import DecayFunctions as df
 
+# obs = cfControlClass('CF_obstacle',(False,'log'),False)
+# obsX = obs.QueueList["vicon"].get()
 
-obs = cfControlClass('CF_obstacle',(False,'ObsVF_1_20s'),True)
-obsX = obs.QueueList["vicon"].get()
+vfy = np.linspace(-2, 2, 31)
+vfx = np.linspace(-2, 2, 31)
 
 # Create navigational field
 cvf = VectorField.CircleVectorField('Gradient')
@@ -28,20 +28,14 @@ actualRadius = .05
 ovf.G = -1
 ovf.H = 1
 ovf.L = 0
-ovf.xc = obsX["x"]
-ovf.yc = obsX["y"]
+ovf.xc = 1
+ovf.yc = 0
 ovf.bUsePathFunc = False
 ovf.bNormVFVectors = True
 #endregion
 
 
 def calcVF():
-    vfy = np.linspace(-2,2,31)
-    vfx = np.linspace(-2,2,31)
-
-    ovf.xc = obsX["x"]
-    ovf.yc = obsX["y"]
-
     XS = np.empty([len(vfx),len(vfy)])
     YS = np.empty([len(vfx),len(vfy)])
     US = np.empty([len(vfx),len(vfy)])
@@ -80,6 +74,12 @@ def calcVF():
             VS[i][j] = VS[i][j]/MAG
 
 
+            # US[i][j] =  UAVOID*p
+            # VS[i][j] =  VAVOID*p
+            # print("Decay: ",p,'\t',"Range: ",rOVF)
+
+
+
     XS = XS.tolist()
     YS = YS.tolist()
     US = US.tolist()
@@ -90,7 +90,7 @@ def calcVF():
 
 XS,YS,US,VS = calcVF()
 plt.scatter(ovf.xc,ovf.yc)
-plt.quiver(XS,YS,US,YS,scale=20)
+plt.quiver(XS,YS,US,VS,scale=20)
 plt.xlim(-2,2)
 plt.ylim(-2,2)
 plt.show()

@@ -1,5 +1,5 @@
 from cfControlClass import cfControlClass
-import VFControl as VectorField
+import VectorField
 import numpy as np
 import DecayFunctions as df
 import threading
@@ -16,28 +16,23 @@ flighttime = 20
 sleeptime = .2
 
 # Create navigational field
-cvf = VectorField.CircleVectorField('Gradient')
+cvf = VectorField.VField()
 cvf.G = 1
 cvf.H = 1
 cvf.L = 0
-cvf.mCircleRadius = .5
+cvf.radius = .5
 cvf.xc = 0
 cvf.yc = 0
-cvf.bUsePathFunc = False
-cvf.NormVFVectors = True
 
 ##
-ovf = VectorField.CircleVectorField('Gradient')
-ovf.mCircleRadius = .0001
-actualRadius = .02
+ovf = VectorField.VField()
+ovf.radius = 1
 ovf.G = -1
 ovf.H = 1
 ovf.L = 0
 ovf.xc = 0
 ovf.yc = 1
-ovf.bUsePathFunc = False
-ovf.bNormVFVectors = True
-##
+
 if uav.active:
     X = uav.QueueList["vicon"].get()
     if abs(X["x"]) > .05 and abs(X["y"]) > .05:
@@ -55,15 +50,15 @@ if uav.active:
 for i in range(0,int(flighttime/sleeptime)):
     X = uav.QueueList["vicon"].get()
 
-    params = VectorField.VFData()
-    params.x = X["x"]
-    params.y = X["y"]
+
+    quadX = X["x"]
+    quadY = X["y"]
 
     obsX = obs.QueueList["vicon"].get()
     ovf.xc = obsX["x"]
     ovf.yc = obsX["y"]
 
-    newCVF = cvf.GetVF_at_XY(params)
+    newCVF = cvf.GetVF_at_XY(quadX,quadY)
     u = newCVF.F[0]
     v = newCVF.F[1]
 
@@ -74,11 +69,11 @@ for i in range(0,int(flighttime/sleeptime)):
 
     ##
     # Calculate obstacle field decay
-    rOVF = np.sqrt(np.square(params.x - ovf.xc) + np.square(params.y - ovf.yc)) / actualRadius
-    p = df.VTanh(rOVF)
+    rOVF = np.sqrt(np.square(quadX - ovf.xc) + np.square(quadY - ovf.yc)) / 1
+    p = df.ActualTanh(rOVF)
 
     # Obstacle field component
-    newOVF = ovf.GetVF_at_XY(params)
+    newOVF = ovf.GetVF_at_XY(quadX,quadY)
     uAvoid = newOVF.F[0]
     vAvoid = newOVF.F[1]
 
