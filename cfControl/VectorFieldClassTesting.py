@@ -1,3 +1,4 @@
+from cfControlClass import cfControlClass
 import DecayFunctions as df
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,17 +8,21 @@ vfy = np.linspace(-2, 2, 45)
 vfx = np.linspace(-2, 2, 45)
 
 VF = VectorField.VField()
-VF.radius = .5
-VF.G = 1
-VF.H = 1
+VF.radius = .7
+VF.G = 4
+VF.H = 3
 VF.xc = 0
 VF.yc = 0
 
+obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
+obsX = obs.QueueList["vicon"].get()
+
 OVF = VectorField.VField()
-OVF.radius = .01
-OVF.xc = 0.5
+OVF.radius = .05
+OVF.xc = obsX["x"]
+OVF.yc = obsX["y"]
 OVF.G = -1
-OVF.H = 1
+OVF.H = -1
 
 
 

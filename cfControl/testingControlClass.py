@@ -5,10 +5,10 @@ import DecayFunctions as df
 import threading
 import time
 
-uav = cfControlClass('CF_1',(True,'ObsVF_1_20s'),True)
+uav = cfControlClass('CF_1',(True,'ObsVF_3222018_1608_20s_newVFClass'),True)
 
 ##
-obs = cfControlClass('CF_obstacle',(False,'ObsVF_1_20s'),True)
+obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
 # obs.ctrl.active = False
 ##
 
@@ -17,18 +17,18 @@ sleeptime = .2
 
 # Create navigational field
 cvf = VectorField.VField()
-cvf.G = 1
-cvf.H = 1
+cvf.G = 2.5
+cvf.H = 3
 cvf.L = 0
-cvf.radius = .5
+cvf.radius = 1
 cvf.xc = 0
 cvf.yc = 0
 
 ##
 ovf = VectorField.VField()
-ovf.radius = 1
+ovf.radius = .05
 ovf.G = -1
-ovf.H = 1
+ovf.H = -1
 ovf.L = 0
 ovf.xc = 0
 ovf.yc = 1
@@ -58,9 +58,9 @@ for i in range(0,int(flighttime/sleeptime)):
     ovf.xc = obsX["x"]
     ovf.yc = obsX["y"]
 
-    newCVF = cvf.GetVF_at_XY(quadX,quadY)
-    u = newCVF.F[0]
-    v = newCVF.F[1]
+    cvf.calcVFatXY(quadX,quadY)
+    u = cvf.V[0]
+    v = cvf.V[1]
 
     MAG = np.sqrt(np.square(u) + np.square(v))
     uNorm = u / MAG
@@ -73,9 +73,9 @@ for i in range(0,int(flighttime/sleeptime)):
     p = df.ActualTanh(rOVF)
 
     # Obstacle field component
-    newOVF = ovf.GetVF_at_XY(quadX,quadY)
-    uAvoid = newOVF.F[0]
-    vAvoid = newOVF.F[1]
+    ovf.calcVFatXY(quadX,quadY)
+    uAvoid = ovf.V[0]
+    vAvoid = ovf.V[1]
 
     magAvoid = np.sqrt(np.square(uAvoid) + np.square(vAvoid))
     UAVOID = uAvoid / magAvoid
@@ -91,9 +91,11 @@ for i in range(0,int(flighttime/sleeptime)):
     MAG = np.sqrt(np.square(uTotal) + np.square(vTotal))
     u = uTotal / MAG
     v = vTotal / MAG
+
+
     ##
 
-    d = .125
+    d = .3
     headingCmd = np.arctan2(v, u)
     xCmd = d * np.cos(headingCmd) + X["x"]
     yCmd = d * np.sin(headingCmd) + X["y"]
@@ -104,7 +106,8 @@ for i in range(0,int(flighttime/sleeptime)):
 
     time.sleep(sleeptime)
 
-
+uav.goto(0,0,.3)
+time.sleep(5)
 uav.land()
 time.sleep(2)
 uav.QueueList["controlShutdown"].put('KILL')       #Send throttle down message to control thread
@@ -113,7 +116,5 @@ print('dead')
 
 
 threads = threading.enumerate()
-uav.QueueList
 for i in range(0, len(threads)):
     print(threads[i].name)
-

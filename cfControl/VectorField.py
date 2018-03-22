@@ -19,7 +19,7 @@ class VField():
         self.L = 0
         self.radius = 1
         self.normConv = True
-        self.normCirc = True
+        self.normCirc = not True
         self.normAll = True
 
     def getXY(self,getx,gety):

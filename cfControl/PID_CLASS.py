@@ -66,13 +66,13 @@ class PID_CLASS():
             time.sleep(1)
             # Controller gain default values
             self.rPID_P = 29
-            self.rPID_I = 2.5
-            self.rPID_D = 15
+            self.rPID_I = 20
+            self.rPID_D = 17
             self.rPID_set_point = 0
 
             self.pPID_P = 29
-            self.pPID_I = 2.5
-            self.pPID_D = 15
+            self.pPID_I = 20
+            self.pPID_D = 17
             self.pPID_set_point = 0
 
             self.yPID_P = 80
