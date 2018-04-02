@@ -7,6 +7,8 @@ class VField():
         self.y = 0
         self.xc = 0
         self.yc = 0
+        self.endX = 0
+        self.endY = 0
         self.xbar = 0
         self.ybar = 0
         self.A = 0
@@ -21,6 +23,7 @@ class VField():
         self.normConv = True
         self.normCirc = not True
         self.normAll = True
+        self.isLine = True
 
     def getXY(self,getx,gety):
         self.x = getx
@@ -62,11 +65,30 @@ class VField():
                 self.Vcirc[i] = self.Vcirc[i]/mag
 
     def calcVFatXY(self,getx,gety):
-        self.calcVconv(getx,gety)
-        self.calcVcirc()
+        if self.isLine:
+            self.xc = self.endX
+            self.yc = self.endY
+            a = np.sin(np.arctan2(self.endY,self.endX))
+            b = np.cos(np.arctan2(self.endY,self.endX))
 
-        for i in range(0,len(self.V)):
-            self.V[i] = self.G*self.Vconv[i] + self.H*self.Vcirc[i]
+            a1 = a * (getx - self.xc) + b * (gety - self.yc)
+            ga1 = np.array([a, b, 0])
+            a2 = 0
+            ga2 = np.array([0, 0, 1])
+            Vcnv = -self.G * (a1 * ga1 + a2 * ga2)
+            Vcrc = np.cross(ga1, ga2)
+            TV = [0, 0, 0]
+            conv = Vcnv
+            circ = Vcrc
+            tv = TV
+            self.V = conv + circ + tv
+
+        else:
+            self.calcVconv(getx,gety)
+            self.calcVcirc()
+
+            for i in range(0,len(self.V)):
+                self.V[i] = self.G*self.Vconv[i] + self.H*self.Vcirc[i]
 
 
 

@@ -4,25 +4,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import VectorField
 
-vfy = np.linspace(-2, 2, 45)
-vfx = np.linspace(-2, 2, 45)
+vfy = np.linspace(-1.5, 1.5, 45)
+vfx = np.linspace(-1.5, 1.5, 45)
 
 VF = VectorField.VField()
+VF.isLine = True
 VF.radius = .7
-VF.G = 4
-VF.H = 3
+VF.G = 3
+VF.H = 0
 VF.xc = 0
 VF.yc = 0
+VF.endX = 1
+VF.endY = 0
 
-obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
-obsX = obs.QueueList["vicon"].get()
+# obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
+# obsX = obs.QueueList["vicon"].get()
 
 OVF = VectorField.VField()
+OVF.isLine = False
 OVF.radius = .05
-OVF.xc = obsX["x"]
-OVF.yc = obsX["y"]
+OVF.xc = .5
+OVF.yc = 0
 OVF.G = -1
-OVF.H = -1
+OVF.H = 0
 
 
 
@@ -59,9 +63,6 @@ def calcVF(VF,OVF):
             ou = p * ou
             ov = p * ov
 
-            # ou = 1 * ou
-            # ov = 1 * ov
-
             mag = np.sqrt(np.square(u)+np.square(v))
             US[i][j] = u/mag
             VS[i][j] = v/mag
@@ -88,8 +89,11 @@ def calcVF(VF,OVF):
     return XS,YS,US,VS
 
 
+theta = np.linspace(0,2*np.pi,30)
 XS,YS,US,VS = calcVF(VF,OVF)
 plt.quiver(XS,YS,US,VS,scale=50)
+plt.plot([0,VF.endX],[0,VF.endY],color='r')
+plt.plot(.3*np.cos(theta)+OVF.xc,.3*np.sin(theta)+OVF.yc)
 plt.xlim(-2,2)
 plt.ylim(-2,2)
 plt.show()

@@ -17,21 +17,25 @@ sleeptime = .2
 
 # Create navigational field
 cvf = VectorField.VField()
-cvf.G = 2.5
-cvf.H = 3
+cvf.isLine = True
+cvf.G = 3
+cvf.H = 0
 cvf.L = 0
-cvf.radius = 1
+cvf.radius = .7
 cvf.xc = 0
 cvf.yc = 0
+cvf.endX = 1.2
+cvf.endY = 0
 
 ##
 ovf = VectorField.VField()
+ovf.isLine = False
 ovf.radius = .05
 ovf.G = -1
-ovf.H = -1
+ovf.H = 0
 ovf.L = 0
-ovf.xc = 0
-ovf.yc = 1
+ovf.xc = .5
+ovf.yc = 0
 
 if uav.active:
     X = uav.QueueList["vicon"].get()
