@@ -5,14 +5,10 @@ import DecayFunctions as df
 import threading
 import time
 
-uav = cfControlClass('CF_1',(True,'ObsVF_3222018_1608_20s_newVFClass'),True)
+uav = cfControlClass('CF_1',(True,'ObsVF_04052018_1320'),True)
+obs = cfControlClass('CF_obstacle',(True,'obstacle_04052018_1320'),True)
 
-##
-obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
-# obs.ctrl.active = False
-##
-
-flighttime = 20
+flighttime = 10
 sleeptime = .2
 
 # Create navigational field
@@ -22,10 +18,10 @@ cvf.G = 3
 cvf.H = 0
 cvf.L = 0
 cvf.radius = .7
+cvf.yc = -1
 cvf.xc = 0
-cvf.yc = 0
-cvf.endX = 1.2
-cvf.endY = 0
+cvf.endY = 1
+cvf.endX = 0
 
 ##
 ovf = VectorField.VField()
@@ -37,21 +33,21 @@ ovf.L = 0
 ovf.xc = .5
 ovf.yc = 0
 
-if uav.active:
-    X = uav.QueueList["vicon"].get()
-    if abs(X["x"]) > .05 and abs(X["y"]) > .05:
-        uav.takeoff(.3)
-        time.sleep(5)
-        uav.goto(0,0,.3)
-        time.sleep(5)
-        uav.goto(.05,0,.3)
-        time.sleep(3)
-    else:
-        uav.takeoff(.3)
-        time.sleep(5)
 
+
+if uav.active:
+    time.sleep(3)
+    uav.takeoff(.3)
+    time.sleep(3)
+    uav.goto(.5,0,.3)
+    time.sleep(3)
+    uav.goto(.1,1.2,.3)
+    time.sleep(3)
 
 for i in range(0,int(flighttime/sleeptime)):
+    if i == 0:
+        uav.startLog()
+
     X = uav.QueueList["vicon"].get()
 
 
@@ -110,12 +106,15 @@ for i in range(0,int(flighttime/sleeptime)):
 
     time.sleep(sleeptime)
 
+    if abs(quadY) > 1.3:
+        uav.QueueList["controlShutdown"].put('THROTTLE_DOWN')
+
 uav.goto(0,0,.3)
 time.sleep(5)
 uav.land()
 time.sleep(2)
 uav.QueueList["controlShutdown"].put('KILL')       #Send throttle down message to control thread
-time.sleep(2)
+time.sleep(10)
 print('dead')
 
 

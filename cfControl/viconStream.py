@@ -66,6 +66,7 @@ class viconStream():
             t1 = time.time()
             X = vc.getPos(self.name)
 
+
             if X["x"] is not False:
                 self.X["x"] = X["x"]
                 self.X["y"] = X["y"]

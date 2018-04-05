@@ -42,7 +42,7 @@ class cfControlClass():
         thread.start()
 
 
-        self.startLog()
+        # self.startLog()
         time.sleep(1)
         self.startVicon()
         time.sleep(3)

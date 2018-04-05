@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import VectorField
 
+uav = cfControlClass('CF_1',(True,'ObsVF_3222018_1608_20s_newVFClass'),True)
+
 vfy = np.linspace(-1.5, 1.5, 45)
 vfx = np.linspace(-1.5, 1.5, 45)
 
@@ -13,18 +15,19 @@ VF.radius = .7
 VF.G = 3
 VF.H = 0
 VF.xc = 0
-VF.yc = 0
-VF.endX = 1
-VF.endY = 0
+VF.yc = -1
+VF.endX = 0
+VF.endY = 1
 
-# obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
-# obsX = obs.QueueList["vicon"].get()
+obs = cfControlClass('CF_obstacle',(True,'obstacle_3222018_1353_20s'),True)
+obsX = obs.QueueList["vicon"].get()
+uavX = uav.QueueList["vicon"].get()
 
 OVF = VectorField.VField()
 OVF.isLine = False
 OVF.radius = .05
-OVF.xc = .5
-OVF.yc = 0
+OVF.xc = obsX["x"]
+OVF.yc = obsX["y"]
 OVF.G = -1
 OVF.H = 0
 
@@ -92,8 +95,9 @@ def calcVF(VF,OVF):
 theta = np.linspace(0,2*np.pi,30)
 XS,YS,US,VS = calcVF(VF,OVF)
 plt.quiver(XS,YS,US,VS,scale=50)
-plt.plot([0,VF.endX],[0,VF.endY],color='r')
+plt.plot([0,VF.endX],[0,0],color='r')
 plt.plot(.3*np.cos(theta)+OVF.xc,.3*np.sin(theta)+OVF.yc)
+plt.scatter(uavX["x"],uavX["y"],color='g')
 plt.xlim(-2,2)
 plt.ylim(-2,2)
 plt.show()
