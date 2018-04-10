@@ -27,15 +27,15 @@ cvf.endX = 0
 ovf = VectorField.VField()
 ovf.isLine = False
 ovf.radius = .05
-ovf.G = -1
+ovf.G = -2
 ovf.H = 0
 ovf.L = 0
 ovf.xc = .5
 ovf.yc = 0
 
-obsStorageX = np.array()
-obsStorageY = np.array()
-obsStorageR = np.array()
+obsStorageX = np.array([])
+obsStorageY = np.array([])
+obsStorageR = np.array([])
 
 if uav.active:
     time.sleep(3)
@@ -43,11 +43,14 @@ if uav.active:
     time.sleep(3)
     uav.goto(.5,0,.3)
     time.sleep(3)
-    uav.goto(.1,1.2,.3)
+    uav.goto(0,1,.3)
     time.sleep(3)
 
+time.sleep(3)
 for i in range(0,int(flighttime/sleeptime)):
     if i == 0:
+        while not uav.QueueList["dataLogger"].empty():
+            uav.QueueList["dataLogger"].get()
         uav.startLog()
 
     X = uav.QueueList["vicon"].get()
@@ -60,9 +63,9 @@ for i in range(0,int(flighttime/sleeptime)):
     ovf.xc = obsX["x"]
     ovf.yc = obsX["y"]
 
-    obsStorageX = np.append(obsX["x"])
-    obsStorageY = np.append(obsX["y"])
-    obsStorageR = np.append(.5)
+    obsStorageX = np.append(obsStorageX,[obsX["x"]])
+    obsStorageY = np.append(obsStorageY,[obsX["y"]])
+    obsStorageR = np.append(obsStorageR,[.3])
 
     cvf.calcVFatXY(quadX,quadY)
     u = cvf.V[0]
@@ -112,7 +115,7 @@ for i in range(0,int(flighttime/sleeptime)):
 
     time.sleep(sleeptime)
 
-    if abs(quadY) > 1.3:
+    if abs(quadY) > 1.1:
         uav.QueueList["controlShutdown"].put('THROTTLE_DOWN')
 
 uav.goto(0,0,.3)
@@ -128,4 +131,4 @@ threads = threading.enumerate()
 for i in range(0, len(threads)):
     print(threads[i].name)
 
-np.savetxt('obsData.out',(obsStorageX,obsStorageY,obsStorageR))
+np.savetxt('obsData.out',(obsStorageX,obsStorageY,obsStorageR),delimiter=',')

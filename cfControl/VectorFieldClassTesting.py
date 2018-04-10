@@ -28,7 +28,7 @@ OVF.isLine = False
 OVF.radius = .05
 OVF.xc = obsX["x"]
 OVF.yc = obsX["y"]
-OVF.G = -1
+OVF.G = -2
 OVF.H = 0
 
 
@@ -62,7 +62,6 @@ def calcVF(VF,OVF):
             ou = ou/omag
             ov = ov/omag
 
-            print(p)
             ou = p * ou
             ov = p * ov
 
@@ -93,7 +92,14 @@ def calcVF(VF,OVF):
 
 
 theta = np.linspace(0,2*np.pi,30)
+
 XS,YS,US,VS = calcVF(VF,OVF)
+
+np.savetxt('XVF.out',XS,delimiter=',')
+np.savetxt('YVF.out',YS,delimiter=',')
+np.savetxt('UVF.out',US,delimiter=',')
+np.savetxt('VVF.out',VS,delimiter=',')
+
 plt.quiver(XS,YS,US,VS,scale=50)
 plt.plot([0,VF.endX],[0,0],color='r')
 plt.plot(.3*np.cos(theta)+OVF.xc,.3*np.sin(theta)+OVF.yc)

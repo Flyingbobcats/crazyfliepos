@@ -4,8 +4,20 @@ clear
 close all
 
 filename = uigetfile('.txt');
+obsFile = uigetfile('.out');
 % disp(filename)
+
+xfile = uigetfile('XVF.out');
+yfile = uigetfile('YVF.out');
+ufile = uigetfile('UVF.out');
+vfile = uigetfile('VVF.out');
+
 [time,x,y,z,yaw,x_sp,y_sp,z_sp,yaw_sp] = importfile1(filename,1,10000000);
+obsData = OBSimportfile(obsFile);
+XS = VFDataimportfile(xfile);
+YS = VFDataimportfile(yfile);
+US = VFDataimportfile(ufile);
+VS = VFDataimportfile(vfile);
 
 % retrieving UAV position from DATA and storing it in 'position'
 position(:,1) = x; % x coordinates
@@ -25,17 +37,22 @@ waypoint(:,3) = z_sp;
 % storing unique waypoints in 'wpts'
 wpts = unique(waypoint,'rows');
 
+theta = linspace(0,2*pi,length(obsData(1,:)));
+circXs = obsData(3,1)*cos(theta);
+circYs = obsData(3,1)*sin(theta);
+
+
 % plot of UAV path with waypoints
 figure
 hold on
-plot3(position(:,1),position(:,2),position(:,3))            % plotting the UAV path
+quiver(XS,YS,US,VS)
+plot(position(:,1),position(:,2),'LineWidth',3)            % plotting the UAV path
 % plot3(wpts(:,1),wpts(:,2),wpts(:,3),'--')    % plotting the waypoints
+plot(obsData(1,:)+circXs,obsData(2,:)+circYs)
 xlabel('x');
 ylabel('y');
-zlabel('z');
 axis equal
 grid on
-view([45,45]);
 
 % x position
 figure
