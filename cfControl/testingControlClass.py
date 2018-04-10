@@ -33,7 +33,9 @@ ovf.L = 0
 ovf.xc = .5
 ovf.yc = 0
 
-
+obsStorageX = np.array()
+obsStorageY = np.array()
+obsStorageR = np.array()
 
 if uav.active:
     time.sleep(3)
@@ -57,6 +59,10 @@ for i in range(0,int(flighttime/sleeptime)):
     obsX = obs.QueueList["vicon"].get()
     ovf.xc = obsX["x"]
     ovf.yc = obsX["y"]
+
+    obsStorageX = np.append(obsX["x"])
+    obsStorageY = np.append(obsX["y"])
+    obsStorageR = np.append(.5)
 
     cvf.calcVFatXY(quadX,quadY)
     u = cvf.V[0]
@@ -121,3 +127,5 @@ print('dead')
 threads = threading.enumerate()
 for i in range(0, len(threads)):
     print(threads[i].name)
+
+np.savetxt('obsData.out',(obsStorageX,obsStorageY,obsStorageR))
